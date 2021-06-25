@@ -1,13 +1,32 @@
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var session = require('express-session');
+var flash = require('connect-flash');
+var mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+
+mongoose.connect('mongodb+srv://root:Y7xU7CCvVmbUkNa4@cluster0.aa4ya.mongodb.net/test?authSource=admin&replicaSet=atlas-w2qdkc-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true', {
+  useNewUrlParser:true,
+  useUnifiedTopology:true
+});
+
+require("./models/Motorcycle");
+
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
+
+app.use(session({ cookie: { maxAge: 60000 },
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: false}));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

@@ -65,13 +65,19 @@ router.get("/motorcycle/:id", async function (req, res, next) {
 
 router.put("/motorcycle/:id", async function (req, res, next) {
   const { id } = req.params;
-  const motorcycle = await Motorcycle.findById({ _id: id });
-  if (motorcycle.length !== 0) {
-    return res.status(200).json(motorcycle);
+  const { joao } = req.body;
+  console.log("req", req.body);
+  res.status(201).json(req.body);
+});
+
+router.delete("/motorcycle/:id", async function (req, res, next) {
+  const { id } = req.params;
+  try {
+    await Motorcycle.findByIdAndDelete({ _id: id });
+    res.status(201).json({ title: "Deletado com Sucesso !!!" });
+  } catch (error) {
+    res.status(400).json({ title: error });
   }
-  return res
-    .status(404)
-    .json({ message: "Não existe nenhum registro no banco" });
 });
 
 module.exports = router;

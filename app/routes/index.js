@@ -55,7 +55,7 @@ router.get("/motorcycle", async function (req, res, next) {
 router.get("/motorcycle/:id", async function (req, res, next) {
   const { id } = req.params;
   const motorcycle = await Motorcycle.findById({ _id: id });
-  if (motorcycle.length !== 0) {
+  if (motorcycle) {
     return res.status(200).json(motorcycle);
   }
   return res
@@ -65,9 +65,12 @@ router.get("/motorcycle/:id", async function (req, res, next) {
 
 router.put("/motorcycle/:id", async function (req, res, next) {
   const { id } = req.params;
-  const { joao } = req.body;
-  console.log("req", req.body);
-  res.status(201).json(req.body);
+  try {
+    await Motorcycle.updateOne({ _id: id }, { $set: req.body });
+    res.status(201).json({ title: "Atualizado com Sucesso !!!" });
+  } catch (error) {
+    res.status(400).json({ title: error });
+  }
 });
 
 router.delete("/motorcycle/:id", async function (req, res, next) {
@@ -80,4 +83,12 @@ router.delete("/motorcycle/:id", async function (req, res, next) {
   }
 });
 
+router.post("/motorcycle/", async function (req, res, next) {
+  try {
+    await Motorcycle.create(req.body);
+    res.status(201).json({ title: "Criado com Sucesso !!!" });
+  } catch (error) {
+    res.status(400).json({ title: error });
+  }
+});
 module.exports = router;

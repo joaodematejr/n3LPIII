@@ -1,15 +1,77 @@
-var express = require('express');
+var express = require("express");
+var fastcsv = require("fast-csv");
 var router = express.Router();
-var fs = require('fs');
-var mongoose = require('mongoose');
-var Motorcycle = mongoose.model('Motorcycle');
+var fs = require("fs");
+var mongoose = require("mongoose");
+var Motorcycle = mongoose.model("Motorcycle");
 var csvfile = __dirname + "/../public/files/MotorcycleData.csv";
 var stream = fs.createReadStream(csvfile);
 
-
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Importando arquivo CSV usando NodeJS.' });
+router.get("/", function (req, res, next) {
+  res.render("index", { title: "Importando arquivo CSV usando NodeJS." });
+});
+
+router.get("/csv", function (req, res, next) {
+  var csvStream = fastcsv
+    .parse()
+    .on("data", function (data) {
+      var item = new Motorcycle({
+        condition: data[0],
+        condition_desc: data[1],
+        price: data[3],
+        location: data[4],
+        model_year: data[5],
+        exterior_color: data[7],
+        make: data[8],
+        warranty: data[9],
+        model: data[10],
+        sub_model: data[11],
+        type: data[12],
+      });
+      item.save(function (error) {
+        if (error) {
+          res.status(400).json({ title: error });
+          throw error;
+        }
+      });
+    })
+    .on("end", function () {
+      res.status(200).json({ title: "Os dados foram importados com sucesso." });
+    });
+  stream.pipe(csvStream);
+});
+
+router.get("/motorcycle", async function (req, res, next) {
+  const motorcycle = await Motorcycle.find({});
+  if (motorcycle.length !== 0) {
+    return res.status(200).json(motorcycle);
+  }
+  return res
+    .status(404)
+    .json({ message: "Não existe nenhum registro no banco" });
+});
+
+router.get("/motorcycle/:id", async function (req, res, next) {
+  const { id } = req.params;
+  const motorcycle = await Motorcycle.findById({ _id: id });
+  if (motorcycle.length !== 0) {
+    return res.status(200).json(motorcycle);
+  }
+  return res
+    .status(404)
+    .json({ message: "Não existe nenhum registro no banco" });
+});
+
+router.put("/motorcycle/:id", async function (req, res, next) {
+  const { id } = req.params;
+  const motorcycle = await Motorcycle.findById({ _id: id });
+  if (motorcycle.length !== 0) {
+    return res.status(200).json(motorcycle);
+  }
+  return res
+    .status(404)
+    .json({ message: "Não existe nenhum registro no banco" });
 });
 
 module.exports = router;

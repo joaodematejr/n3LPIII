@@ -44,8 +44,12 @@ router.get("/csv", function (req, res, next) {
 
 router.get("/motorcycle", async function (req, res, next) {
   const motorcycle = await Motorcycle.find({});
-  if (motorcycle.length !== 0) {
-    return res.status(200).json(motorcycle);
+  if (motorcycle.length !== 0) {   
+    let newList = []; 
+    motorcycle.forEach(e => {
+      newList.push({...e._doc, id: e._id});
+    });
+    return res.status(200).json(newList);
   }
   return res
     .status(404)

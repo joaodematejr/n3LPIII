@@ -63,6 +63,7 @@ $ yarn start
 # O servidor inciará na porta:3001 - acesse <http://localhost:3001>
 ```
 
+```bash
 # Clone este repositório
 $ git clone <https://github.com/joaodematejr/n3LPIII>
 
@@ -79,6 +80,7 @@ $ yarn
 $ yarn dev
 
 # O servidor inciará na porta:3333 - acesse <http://localhost:3333> 
+```
 
 ### 🛠 Tecnologias
 

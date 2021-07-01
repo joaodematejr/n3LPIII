@@ -24,7 +24,7 @@
 
 
 <h4 align="center"> 
-	🚧  React Select 🚀 Em construção...  🚧
+	🚧  Node Select 🚀 Em construção...  🚧
 </h4>
 
 ### Features

@@ -1,12 +1,14 @@
+import _ from "lodash";
 import Button from "@material-ui/core/Button";
 import Container from "@material-ui/core/Container";
 import Dialog from "@material-ui/core/Dialog";
-import Paper from "@material-ui/core/Paper";
+import ReactAudioPlayer from "react-audio-player";
 import { withStyles } from "@material-ui/core/styles";
 import MuiDialogTitle from "@material-ui/core/DialogTitle";
-import MuiDialogContent from "@material-ui/core/DialogContent";
 import Grid from "@material-ui/core/Grid";
+import ReactPlayer from "react-player";
 import IconButton from "@material-ui/core/IconButton";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import CloseIcon from "@material-ui/icons/Close";
 import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
@@ -15,6 +17,9 @@ import { DataGrid } from "@material-ui/data-grid";
 import axios from "axios";
 import TextField from "@material-ui/core/TextField";
 import React, { useEffect, useState } from "react";
+
+const urlNuvem = "https://backendn3.herokuapp.com";
+const urlLocal = "http://localhost:3000";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -45,6 +50,19 @@ export default function FullWidthGrid() {
   const [tmpList, setTmpList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = React.useState(false);
+  //FORMULARIO
+  const [conditionDesc, setConditionDesc] = useState("");
+  const [price, setPrice] = useState("");
+  const [location, setLocation] = useState("");
+  const [modelYear, setModelYear] = useState("");
+  const [exteriorColor, setExteriorColor] = useState("");
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [subModel, setSubModel] = useState("");
+  const [loadingSave, setLoadingSave] = useState(false);
+
+  const [disableDelete, setDisableDelete] = useState(true);
+
   const classes = useStyles();
 
   const handleClickOpen = () => {
@@ -56,7 +74,7 @@ export default function FullWidthGrid() {
 
   async function getMotorcycle() {
     await axios
-      .get("http://localhost:3000/motorcycle/", {})
+      .get(`${urlNuvem}/motorcycle/`, {})
       .then(function (response) {
         if (response.status === 200) {
           setLoading(false);
@@ -76,7 +94,44 @@ export default function FullWidthGrid() {
     getMotorcycle();
   }, []);
 
-  async function handleEditOrDelete(item) {}
+  async function handleEditOrDelete(item) {
+    let newList = _.filter(tmpList, { _id: item.id });
+
+    if (newList.length === 0) {
+      setTmpList(_.concat(tmpList, [item]));
+    } else {
+      let newList2 = _.filter(tmpList, { _id: item.id });
+      setTmpList(_.reject(tmpList, { id: newList2[0].id }));
+    }
+  }
+
+  useEffect(() => {
+    console.log("tmpList", tmpList);
+    if (tmpList.length !== 0) {
+      setDisableDelete(false);
+    } else {
+      setDisableDelete(true);
+    }
+  }, [tmpList]);
+
+  async function handleLoadingCSV() {
+    setLoading(true);
+    await axios
+      .get(`${urlNuvem}/csv/`, {})
+      .then(function (response) {
+        if (response.status === 200) {
+          setLoading(false);
+          getMotorcycle();
+        }
+      })
+      .catch(function (error) {
+        if (error) {
+          alert(
+            "Ocorreu um erro por favor entre em contato com desenvolvedor."
+          );
+        }
+      });
+  }
 
   const DialogActions = withStyles((theme) => ({
     root: {
@@ -103,12 +158,6 @@ export default function FullWidthGrid() {
     );
   });
 
-  const DialogContent = withStyles((theme) => ({
-    root: {
-      padding: theme.spacing(2),
-    },
-  }))(MuiDialogContent);
-
   const columns = [
     {
       field: "condition_desc",
@@ -124,97 +173,183 @@ export default function FullWidthGrid() {
     { field: "sub_model", headerName: "Submodelo", width: 160 },
   ];
 
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoadingSave(true);
+    await axios
+      .post(`${urlNuvem}/motorcycle/`, {
+        condition_desc: conditionDesc,
+        price,
+        location,
+        model_year: modelYear,
+        exterior_color: exteriorColor,
+        make,
+        model,
+        sub_model: subModel,
+      })
+      .then(function (response) {
+        setLoadingSave(false);
+        alert("Aviso !!! Tarefa cadastrada com Sucesso !!!");
+        setConditionDesc("");
+        setPrice("");
+        setLocation("");
+        setModelYear("");
+        setExteriorColor("");
+        setMake("");
+        setModel("");
+        setSubModel("");
+        getMotorcycle();
+      })
+      .catch(function (error) {
+        setLoadingSave(false);
+        if (!error.response) {
+          alert("Aviso !!! Problema com API");
+        } else {
+          if (error.response.status === 400) {
+            error.response.data.errs.forEach((erro) => {
+              alert(erro);
+            });
+          }
+        }
+      });
+  }
+
+  async function handleDelete() {
+    tmpList.forEach((e) => {
+      console.log("e", e);
+    });
+  }
+
   return (
     <div className={classes.root}>
-      <Dialog
-        onClose={handleClose}
-        aria-labelledby="customized-dialog-title"
-        open={open}
-      >
-        <DialogTitle id="customized-dialog-title" onClose={handleClose}>
-          Novo
-        </DialogTitle>
-        <DialogContent dividers>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Descrição da condição"
-                variant="filled"
-              />
+      <Dialog onClose={handleClose} open={open}>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle id="customized-dialog-title" onClose={handleClose}>
+            Novo
+          </DialogTitle>
+          <Container>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="conditionDesc"
+                  required
+                  value={conditionDesc}
+                  onChange={(e) => setConditionDesc(e.target.value)}
+                  label="Descrição da condição"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  style={{ width: "100%" }}
+                  label="Preço"
+                  variant="filled"
+                  id="price"
+                  required
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="location"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  label="Localização"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="modelYear"
+                  required
+                  value={modelYear}
+                  onChange={(e) => setModelYear(e.target.value)}
+                  label="Ano"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="exteriorColor"
+                  required
+                  value={exteriorColor}
+                  onChange={(e) => setExteriorColor(e.target.value)}
+                  label="Cor"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="make"
+                  required
+                  value={make}
+                  onChange={(e) => setMake(e.target.value)}
+                  label="Marca"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="model"
+                  required
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  label="Modelo"
+                  variant="filled"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  style={{ width: "100%" }}
+                  id="subModel"
+                  required
+                  value={subModel}
+                  onChange={(e) => setSubModel(e.target.value)}
+                  label="Submodelo"
+                  variant="filled"
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={4}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Preço"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Localização"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Ano"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Cor"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Marca"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Modelo"
-                variant="filled"
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                style={{ width: "100%" }}
-                id="filled-basic"
-                label="Submodelo"
-                variant="filled"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={handleClose} color="primary">
-            Salvar
-          </Button>
-        </DialogActions>
+          </Container>
+          {loadingSave === false ? (
+            <DialogActions>
+              <Button type="submit" color="primary">
+                Salvar
+              </Button>
+            </DialogActions>
+          ) : (
+            <DialogActions>
+              <CircularProgress color="secondary" />
+            </DialogActions>
+          )}
+        </form>
       </Dialog>
       <br />
       <Container>
+        <ReactAudioPlayer src={'./music.mp3'} autoPlay={true} loop controls={true} preload="none" />
         <Grid container spacing={3}>
           <Grid item xs={12} style={{ textAlign: "center" }}>
             <Typography variant="h6" component="h2">
               Prova
             </Typography>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Button
+              style={{ width: "100%" }}
+              variant="outlined"
+              color="primary"
+              onClick={() => handleLoadingCSV()}
+            >
+              Carregar CSV
+            </Button>
           </Grid>
           <Grid item xs={6} sm={3}>
             <Button
@@ -238,10 +373,11 @@ export default function FullWidthGrid() {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Button
-              disabled={true}
+              disabled={disableDelete}
               style={{ width: "100%" }}
               variant="outlined"
               color="secondary"
+              onClick={() => handleDelete()}
             >
               Deletar
             </Button>

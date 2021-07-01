@@ -6,7 +6,6 @@ import ReactAudioPlayer from "react-audio-player";
 import { withStyles } from "@material-ui/core/styles";
 import MuiDialogTitle from "@material-ui/core/DialogTitle";
 import Grid from "@material-ui/core/Grid";
-import ReactPlayer from "react-player";
 import IconButton from "@material-ui/core/IconButton";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import CloseIcon from "@material-ui/icons/Close";
@@ -51,6 +50,7 @@ export default function FullWidthGrid() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = React.useState(false);
   //FORMULARIO
+  const [id, setId] = useState("");
   const [conditionDesc, setConditionDesc] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
@@ -63,6 +63,8 @@ export default function FullWidthGrid() {
 
   const [disableDelete, setDisableDelete] = useState(true);
   const [loadingDelete, setLoadingDelete] = useState(false);
+
+  const [disableEdit, setDisableEdit] = useState(true);
 
   const classes = useStyles();
 
@@ -111,6 +113,29 @@ export default function FullWidthGrid() {
       setDisableDelete(false);
     } else {
       setDisableDelete(true);
+    }
+    if (tmpList.length === 1) {
+      setId(tmpList[0]._id);
+      setConditionDesc(tmpList[0].condition_desc);
+      setPrice(tmpList[0].price);
+      setLocation(tmpList[0].location);
+      setModelYear(tmpList[0].model_year);
+      setExteriorColor(tmpList[0].exterior_color);
+      setMake(tmpList[0].make);
+      setModel(tmpList[0].model);
+      setSubModel(tmpList[0].sub_model);
+      setDisableEdit(false);
+    } else {
+      setId("");
+      setConditionDesc("");
+      setPrice("");
+      setLocation("");
+      setModelYear("");
+      setExteriorColor("");
+      setMake("");
+      setModel("");
+      setSubModel("");
+      setDisableEdit(true);
     }
   }, [tmpList]);
 
@@ -176,8 +201,9 @@ export default function FullWidthGrid() {
   async function handleSubmit(e) {
     e.preventDefault();
     setLoadingSave(true);
-    await axios
-      .post(`${urlNuvem}/motorcycle/`, {
+    if (id) {
+      await axios
+      .put(`${urlNuvem}/motorcycle/${id}`, {
         condition_desc: conditionDesc,
         price,
         location,
@@ -189,7 +215,7 @@ export default function FullWidthGrid() {
       })
       .then(function (response) {
         setLoadingSave(false);
-        alert("Aviso !!! Tarefa cadastrada com Sucesso !!!");
+        alert("Aviso !!! Atualizado com Sucesso !!!");
         setConditionDesc("");
         setPrice("");
         setLocation("");
@@ -212,6 +238,45 @@ export default function FullWidthGrid() {
           }
         }
       });
+    }else{
+      await axios
+      .post(`${urlNuvem}/motorcycle/`, {
+        condition_desc: conditionDesc,
+        price,
+        location,
+        model_year: modelYear,
+        exterior_color: exteriorColor,
+        make,
+        model,
+        sub_model: subModel,
+      })
+      .then(function (response) {
+        setLoadingSave(false);
+        alert("Aviso !!! cadastrado com Sucesso !!!");
+        setConditionDesc("");
+        setPrice("");
+        setLocation("");
+        setModelYear("");
+        setExteriorColor("");
+        setMake("");
+        setModel("");
+        setSubModel("");
+        getMotorcycle();
+      })
+      .catch(function (error) {
+        setLoadingSave(false);
+        if (!error.response) {
+          alert("Aviso !!! Problema com API");
+        } else {
+          if (error.response.status === 400) {
+            error.response.data.errs.forEach((erro) => {
+              alert(erro);
+            });
+          }
+        }
+      });
+    }
+    
   }
 
   async function handleDelete() {
@@ -228,9 +293,7 @@ export default function FullWidthGrid() {
           }
         });
     }
-    alert(
-      "Item(s) Deletado com sucesso !"
-    );
+    alert("Item(s) Deletado com sucesso !");
     setLoadingDelete(false);
     setLoading(true);
     getMotorcycle();
@@ -241,7 +304,7 @@ export default function FullWidthGrid() {
       <Dialog onClose={handleClose} open={open}>
         <form onSubmit={handleSubmit}>
           <DialogTitle id="customized-dialog-title" onClose={handleClose}>
-            Novo
+            {tmpList.length === 0 ? "Novo" : "Editar"}
           </DialogTitle>
           <Container>
             <Grid container spacing={3}>
@@ -337,9 +400,15 @@ export default function FullWidthGrid() {
           </Container>
           {loadingSave === false ? (
             <DialogActions>
-              <Button type="submit" color="primary">
-                Salvar
-              </Button>
+              {tmpList.length === 0 ? (
+                <Button type="submit" color="primary">
+                  Salvar
+                </Button>
+              ) : (
+                <Button type="submit" color="primary">
+                  Atualizar
+                </Button>
+              )}
             </DialogActions>
           ) : (
             <DialogActions>
@@ -385,10 +454,11 @@ export default function FullWidthGrid() {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Button
-              disabled={true}
+              disabled={disableEdit}
               style={{ width: "100%" }}
               variant="outlined"
               color="primary"
+              onClick={handleClickOpen}
             >
               Editar
             </Button>

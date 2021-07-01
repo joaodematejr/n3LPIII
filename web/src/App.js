@@ -62,6 +62,7 @@ export default function FullWidthGrid() {
   const [loadingSave, setLoadingSave] = useState(false);
 
   const [disableDelete, setDisableDelete] = useState(true);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const classes = useStyles();
 
@@ -106,7 +107,6 @@ export default function FullWidthGrid() {
   }
 
   useEffect(() => {
-    console.log("tmpList", tmpList);
     if (tmpList.length !== 0) {
       setDisableDelete(false);
     } else {
@@ -215,9 +215,25 @@ export default function FullWidthGrid() {
   }
 
   async function handleDelete() {
-    tmpList.forEach((e) => {
-      console.log("e", e);
-    });
+    setLoadingDelete(true);
+    for (const list of tmpList) {
+      await axios
+        .delete(`${urlNuvem}/motorcycle/${list.id}`)
+        .then(function (response) {})
+        .catch(function (error) {
+          if (error) {
+            alert(
+              "Ocorreu um erro por favor entre em contato com desenvolvedor."
+            );
+          }
+        });
+    }
+    alert(
+      "Item(s) Deletado com sucesso !"
+    );
+    setLoadingDelete(false);
+    setLoading(true);
+    getMotorcycle();
   }
 
   return (
@@ -334,7 +350,13 @@ export default function FullWidthGrid() {
       </Dialog>
       <br />
       <Container>
-        <ReactAudioPlayer src={'./music.mp3'} autoPlay={true} loop controls={true} preload="none" />
+        <ReactAudioPlayer
+          src={"./music.mp3"}
+          autoPlay={true}
+          loop
+          controls={true}
+          preload="none"
+        />
         <Grid container spacing={3}>
           <Grid item xs={12} style={{ textAlign: "center" }}>
             <Typography variant="h6" component="h2">
@@ -372,15 +394,19 @@ export default function FullWidthGrid() {
             </Button>
           </Grid>
           <Grid item xs={6} sm={3}>
-            <Button
-              disabled={disableDelete}
-              style={{ width: "100%" }}
-              variant="outlined"
-              color="secondary"
-              onClick={() => handleDelete()}
-            >
-              Deletar
-            </Button>
+            {loadingDelete !== true ? (
+              <Button
+                disabled={disableDelete}
+                style={{ width: "100%" }}
+                variant="outlined"
+                color="secondary"
+                onClick={() => handleDelete()}
+              >
+                Deletar
+              </Button>
+            ) : (
+              <CircularProgress color="secondary" />
+            )}
           </Grid>
           <Grid item xs={6} sm={3}></Grid>
           <Grid item xs={12} style={{ textAlign: "center" }}>
